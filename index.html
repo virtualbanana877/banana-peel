@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>バーチャルのバナナの皮むき</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@800;900&display=swap">
+<style>
+:root{--blue:#2b3fd6;--deep:#1b1b3a;--banana:#ffd93b;--pink:#ff5c8a;--p1:#ffd21f;--p2:#ffec7a;--p3:#f2b300;--edge:#c98f00;--f1:#fffbe6;--f2:#f1e0a0;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--blue)}
+*,*::before,*::after{box-sizing:inherit}
+html,body{height:100%;margin:0}
+body{background:var(--blue);color:#fff;font-family:"Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;font-weight:700;
+-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;touch-action:none;overflow:hidden}
+.disp{font-family:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;font-weight:900;letter-spacing:.03em}
+#app{height:100%;max-width:520px;margin:0 auto;display:grid;grid-template-rows:auto 1fr auto;padding:20px 20px 24px;position:relative;transition:background .4s}
+#app[data-r="god"]{background:radial-gradient(circle at 50% 48%,rgba(255,140,200,.9) 0,rgba(140,70,255,.6) 40%,transparent 72%)}
+.top{text-align:center;min-height:150px;display:flex;flex-direction:column;justify-content:center;gap:10px}
+.bottom{display:flex;flex-direction:column;align-items:center;gap:12px;min-height:130px;justify-content:flex-end}
+#app[data-s="title"] :is(.on-play,.on-result),#app[data-s="play"] :is(.on-title,.on-result),#app[data-s="result"] :is(.on-title,.on-play){display:none!important}
+h1{margin:0;font-size:clamp(34px,11vw,52px);line-height:1.15;color:var(--banana);text-shadow:3px 3px 0 var(--deep)}
+.lead{margin:0;font-size:17px;line-height:1.6}
+.hint{margin:0;font-size:21px;line-height:1.4}
+.on-title,.hint,#rtext,#rsub{background:rgba(27,27,58,.92);border-radius:22px;padding:16px 18px;box-shadow:0 5px 0 rgba(0,0,0,.3)}
+.stage{display:flex;align-items:center;justify-content:center;min-height:0}
+#bwrap{height:100%;max-height:430px;aspect-ratio:320/420;filter:drop-shadow(0 10px 0 rgba(27,27,58,.28))}
+#app[data-s="title"] #bwrap{animation:wob 2.4s ease-in-out infinite}
+@keyframes wob{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+#bwrap svg{width:100%;height:100%;overflow:visible}
+.btn{appearance:none;border:0;border-radius:999px;background:var(--pink);color:#fff;font:inherit;font-size:22px;padding:16px 40px;min-width:240px;
+box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--deep)}
+.btn.sub{background:var(--banana);color:var(--deep)}
+.btn.x{background:#000}
+.btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.gauge{width:100%;height:30px;border-radius:999px;background:var(--deep);padding:4px;box-shadow:0 4px 0 rgba(0,0,0,.25)}
+#fill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#ffe97a,var(--banana))}
+#pct{font-size:44px;line-height:1;font-variant-numeric:tabular-nums}
+#pct small{font-size:20px}
+#rtext{margin:0;font-size:clamp(22px,6.4vw,32px);line-height:1.5}
+#rank{display:inline-block;margin:10px 0 12px;padding:4px 20px 10px;border-radius:20px;background:var(--banana);color:var(--deep);line-height:1.2;box-shadow:0 6px 0 var(--pink);animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+#rsub{margin:0;font-size:17px;line-height:1.5}
+.btns{display:flex;flex-direction:column;gap:12px;align-items:center}
+.pt{position:fixed;font-size:26px;pointer-events:none;z-index:9}
+.shake{animation:shake .45s}
+@keyframes shake{20%{transform:translateX(-12px) rotate(-3deg)}40%{transform:translateX(12px) rotate(3deg)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
+#app[data-r="unripe"]{--p1:#7fb72a;--p2:#b9e05a;--p3:#5f9a1a;--edge:#4f7d12;--f1:#f6f8d2;--f2:#dfe8a0}
+#app[data-r="mushy"]{--f1:#f0cf8e;--f2:#d2a456}
+#app[data-r="rotten"]{--p1:#6f7a3a;--p2:#8d9650;--p3:#4a5224;--edge:#343a18;--f1:#8a7440;--f2:#5e4b25}
+@media (prefers-reduced-motion:reduce){#app[data-s="title"] #bwrap,#rank,.shake{animation:none}}
+</style>
+</head>
+<body>
+<main id="app" data-s="title" data-r="">
+  <div class="top">
+    <div class="on-title">
+      <h1 class="disp">バーチャルの<br>バナナの皮むき</h1>
+      <p class="lead" style="margin-top:14px">長押しで皮をむいて、<br>ちょうどいいところで指を離そう。</p>
+    </div>
+    <p class="hint on-play" id="hint">画面を長押し！</p>
+    <p class="on-result" id="rtext"></p>
+  </div>
+
+  <div class="stage" id="stage">
+    <div id="bwrap">
+      <svg viewBox="0 0 320 420" aria-label="バナナ" role="img">
+        <defs>
+          <linearGradient id="peelG" gradientUnits="userSpaceOnUse" x1="-34" y1="0" x2="34" y2="0"><stop offset="0" style="stop-color:var(--p1)"/><stop offset=".45" style="stop-color:var(--p2)"/><stop offset="1" style="stop-color:var(--p3)"/></linearGradient>
+          <linearGradient id="inG" gradientUnits="userSpaceOnUse" x1="-34" y1="0" x2="34" y2="0"><stop offset="0" stop-color="#f3dc8a"/><stop offset=".5" stop-color="#fff3bf"/><stop offset="1" stop-color="#e8c960"/></linearGradient>
+          <linearGradient id="fruG" x1="0" x2="1"><stop offset="0" style="stop-color:var(--f2)"/><stop offset=".4" style="stop-color:var(--f1)"/><stop offset="1" style="stop-color:var(--f2)"/></linearGradient>
+          <linearGradient id="stG" x1="0" x2="1"><stop offset="0" stop-color="#8a6526"/><stop offset=".5" stop-color="#b08838"/><stop offset="1" stop-color="#5e4219"/></linearGradient>
+          <clipPath id="cL"><rect x="-80" y="-240" width="71" height="260"/></clipPath>
+          <clipPath id="cC"><rect x="-10" y="-240" width="20" height="260"/></clipPath>
+          <clipPath id="cR"><rect x="9" y="-240" width="71" height="260"/></clipPath>
+          <g id="sil">
+            <path d="M-30,0 C-36,-60 -34,-150 -10,-200 L-6,-206 L6,-206 L10,-200 C34,-150 36,-60 30,0 Z" stroke="none"/>
+            <path d="M-10,-4 C-12,-60 -12,-150 -6,-200 M10,-4 C12,-60 12,-150 6,-200" fill="none" stroke-width="2" style="stroke:var(--edge)" opacity=".35"/>
+            <path d="M-19,-20 C-23,-80 -22,-140 -14,-180" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="5" stroke-linecap="round"/>
+            <path d="M-30,0 C-36,-60 -34,-150 -10,-200 L-6,-206 L6,-206 L10,-200 C34,-150 36,-60 30,0" fill="none" stroke-width="3" stroke-linejoin="round"/>
+            <rect x="-6" y="-214" width="12" height="10" rx="3" fill="#5a3d1a" stroke="none"/>
+          </g>
+        </defs>
+        <g transform="translate(160,250) rotate(-6)" stroke-linejoin="round">
+          <path d="M-22,-4 C-27,-60 -25,-150 -8,-196 L8,-196 C25,-150 27,-60 22,-4Z" fill="url(#fruG)" style="stroke:var(--edge)" stroke-width="2"/>
+          <path d="M-10,100 L-12,130 Q0,138 12,130 L10,100Z" fill="url(#stG)" stroke="#4a3213" stroke-width="2"/>
+          <path d="M-30,-4 C-38,32 -30,82 -11,104 L11,104 C30,82 38,32 30,-4Z" fill="url(#peelG)" stroke="none"/>
+          <path d="M-10,-4 C-12,40 -9,80 -5,102 M10,-4 C12,40 9,80 5,102" fill="none" stroke-width="2" style="stroke:var(--edge)" opacity=".35"/>
+          <path d="M-30,-4 C-38,32 -30,82 -11,104 L11,104 C30,82 38,32 30,-4" fill="none" style="stroke:var(--edge)" stroke-width="3"/>
+          <g id="fl"><g clip-path="url(#cL)"><use id="flu" href="#sil" style="fill:url(#peelG);stroke:var(--edge)"/></g></g>
+          <g id="fr"><g clip-path="url(#cR)"><use id="fru" href="#sil" style="fill:url(#peelG);stroke:var(--edge)"/></g></g>
+          <g id="fc"><g clip-path="url(#cC)"><use id="fcu" href="#sil" style="fill:url(#peelG);stroke:var(--edge)"/></g></g>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <button class="btn disp on-title" id="start">はじめる</button>
+    <div class="on-play" style="width:100%;display:flex;flex-direction:column;align-items:center;gap:12px">
+      <div id="pct" class="disp">0<small>%</small></div>
+      <div class="gauge"><div id="fill"></div></div>
+    </div>
+    <div class="on-result btns">
+      <p id="rsub"></p>
+      <button class="btn disp" id="again">もう一度遊ぶ</button>
+      <button class="btn x disp" id="share">Xにシェア</button>
+    </div>
+  </div>
+</main>
+
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var app=$('app'),SPEED=100/3.2; // 3.2秒で100%
+  var calm=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var holding=false,t0=0,p=0,raf=0,rank=null;
+
+  var RANKS={
+    god:{n:'神バナナ',s:'完璧。バナナ界の伝説になれる。',e:['🍌','✨','🌟'],c:40},
+    pro:{n:'プロバナナ',s:'お見事。プロの手つき。',e:['🍌','✨'],c:18},
+    normal:{n:'普通バナナ',s:'悪くない。もう少しで神。',e:['🍌'],c:8},
+    unripe:{n:'未熟バナナ',s:'早すぎ。まだ皮が固い。',e:['💦','😣'],c:10},
+    mushy:{n:'ぐちゃぐちゃバナナ',s:'遅すぎ。実がつぶれた。',e:['💥','💦'],c:12},
+    rotten:{n:'腐れバナナ',s:'もはやバナナではない。',e:['🪰','☠️'],c:12}
+  };
+
+  function judge(v){
+    if(v<15||v>=100) return 'rotten';
+    if(v>=78&&v<=82) return 'god';
+    if((v>=70&&v<=77)||(v>=83&&v<=88)) return 'pro';
+    if((v>=55&&v<=69)||(v>=89&&v<=95)) return 'normal';
+    if(v<55) return 'unripe';
+    return 'mushy';
+  }
+
+  function draw(v){
+    var a=v/100*130;
+    $('fl').setAttribute('transform','rotate('+(-a)+',-20,0)');
+    $('fr').setAttribute('transform','rotate('+a+',20,0)');
+    var sy=1-1.6*v/100;
+    $('fc').setAttribute('transform','scale(1,'+sy.toFixed(3)+')');
+    $('fcu').style.fill=sy<0?'url(#inG)':'url(#peelG)';
+    $('flu').style.fill=a>90?'url(#inG)':'url(#peelG)';
+    $('fru').style.fill=a>90?'url(#inG)':'url(#peelG)';
+    $('fill').style.width=v+'%';
+    $('pct').innerHTML=Math.floor(v)+'<small>%</small>';
+  }
+
+  function setScreen(s){app.dataset.s=s;}
+  function ready(){
+    cancelAnimationFrame(raf);holding=false;p=0;rank=null;app.dataset.r='';
+    draw(0);$('hint').textContent='画面を長押し！';setScreen('play');
+  }
+
+  function tick(now){
+    if(!holding) return;
+    p=Math.min(100,(now-t0)/1000*SPEED);
+    draw(p);
+    if(p>=100){finish();return;}
+    raf=requestAnimationFrame(tick);
+  }
+
+  function press(e){
+    if(app.dataset.s!=='play'||holding) return;
+    e.preventDefault();
+    holding=true;t0=performance.now();
+    $('hint').textContent='ちょうどいいところで離す！';
+    raf=requestAnimationFrame(tick);
+  }
+  function release(){
+    if(app.dataset.s!=='play'||!holding) return;
+    finish();
+  }
+
+  function finish(){
+    holding=false;cancelAnimationFrame(raf);
+    var v=Math.floor(p);
+    rank=judge(v);var r=RANKS[rank];
+    draw(p);
+    var parts=r.n.length>6?[r.n.slice(0,-3),'バナナ']:[r.n];
+    var mx=Math.max.apply(null,parts.map(function(t){return t.length}));
+    var fs=Math.min(64,Math.floor((Math.min(window.innerWidth,520)-112)/(mx*1.06)));
+    $('rtext').innerHTML='貴方が剥いたバナナは<br><span id="rank" class="disp" style="font-size:'+fs+'px">'+parts.join('<br>')+'</span><br>でした。';
+    $('rsub').textContent=r.s+'（'+v+'%）';
+    app.dataset.r=rank;setScreen('result');
+    effects(rank);
+  }
+
+  function effects(k){
+    var r=RANKS[k];
+    try{if(navigator.vibrate) navigator.vibrate(k==='god'?[40,40,80]:(k==='pro'||k==='normal')?30:[90,50,90]);}catch(e){}
+    if(calm) return;
+    if(k==='unripe'||k==='mushy'||k==='rotten'){
+      var w=$('bwrap');w.classList.remove('shake');void w.offsetWidth;w.classList.add('shake');
+    }
+    var box=$('stage').getBoundingClientRect(),cx=box.left+box.width/2,cy=box.top+box.height*0.4;
+    for(var i=0;i<r.c;i++){
+      var el=document.createElement('span');el.className='pt';el.textContent=r.e[i%r.e.length];
+      el.style.left=cx+'px';el.style.top=cy+'px';document.body.appendChild(el);
+      var ang=Math.random()*Math.PI*2,d=80+Math.random()*(k==='god'?240:150);
+      var dx=Math.cos(ang)*d,dy=Math.sin(ang)*d+(k==='god'||k==='pro'?-30:60);
+      var an=el.animate([
+        {transform:'translate(-50%,-50%) scale(.3)',opacity:1},
+        {transform:'translate(calc(-50% + '+dx+'px),calc(-50% + '+dy+'px)) rotate('+(Math.random()*360)+'deg) scale(1.1)',opacity:0}
+      ],{duration:900+Math.random()*700,easing:'cubic-bezier(.1,.7,.3,1)'});
+      an.onfinish=(function(n){return function(){n.remove()}})(el);
+    }
+  }
+
+  app.addEventListener('pointerdown',press);
+  window.addEventListener('pointerup',release);
+  window.addEventListener('pointercancel',release);
+  document.addEventListener('contextmenu',function(e){e.preventDefault()});
+
+  $('start').addEventListener('click',ready);
+  $('again').addEventListener('click',ready);
+  $('share').addEventListener('click',function(){
+    if(!rank) return;
+    var text='私が剥いたバナナは'+RANKS[rank].n+'でした！ #バーチャルのバナナの皮むき';
+    window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(text),'_blank','noopener');
+  });
+  draw(0);
+})();
+</script>
+</body>
+</html>

@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>バーチャルのバナナの皮むき</title>
+<meta name="description" content="バナナの皮を長押しでむくタイミングゲーム。あなたは何バナナ？">
+<meta property="og:type" content="website">
+<meta property="og:title" content="バーチャルのバナナの皮むき">
+<meta property="og:description" content="長押しでむく、タイミングゲーム。あなたは何バナナ？">
+<meta property="og:url" content="https://virtualbanana877.github.io/banana-peel/">
+<meta property="og:image" content="https://virtualbanana877.github.io/banana-peel/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://virtualbanana877.github.io/banana-peel/og.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@800;900&display=swap">
 <style>
 :root{--blue:#2b3fd6;--deep:#1b1b3a;--banana:#ffd93b;--pink:#ff5c8a;--p1:#ffd21f;--p2:#ffec7a;--p3:#f2b300;--edge:#c98f00;--f1:#fffbe6;--f2:#f1e0a0;
@@ -32,6 +40,7 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
 .btn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--deep)}
 .btn.sub{background:var(--banana);color:var(--deep)}
 .btn.x{background:#000}
+.btn.mini{font-size:15px;padding:8px 24px;min-width:0;background:transparent;color:#fff;box-shadow:none;text-decoration:underline}
 .btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
 .gauge{width:100%;height:30px;border-radius:999px;background:var(--deep);padding:4px;box-shadow:0 4px 0 rgba(0,0,0,.25)}
 #fill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#ffe97a,var(--banana))}
@@ -105,6 +114,7 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
       <p id="rsub"></p>
       <button class="btn disp" id="again">もう一度遊ぶ</button>
       <button class="btn x disp" id="share">Xにシェア</button>
+      <button class="btn mini disp" id="save">画像を保存</button>
     </div>
   </div>
 </main>
@@ -114,7 +124,7 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
   var $=function(i){return document.getElementById(i)};
   var app=$('app'),SPEED=100/3.2; // 3.2秒で100%
   var calm=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
-  var holding=false,t0=0,p=0,raf=0,rank=null;
+  var holding=false,t0=0,p=0,raf=0,rank=null,lastV=0,imgP=null,URL_='https://virtualbanana877.github.io/banana-peel/';
 
   var RANKS={
     god:{n:'神バナナ',s:'完璧。バナナ界の伝説になれる。',e:['🍌','✨','🌟'],c:40},
@@ -185,6 +195,7 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
     $('rsub').textContent=r.s+'（'+v+'%）';
     app.dataset.r=rank;setScreen('result');
     effects(rank);
+    lastV=v;imgP=makeImage().catch(function(){return null});
   }
 
   function effects(k){
@@ -215,10 +226,57 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
 
   $('start').addEventListener('click',ready);
   $('again').addEventListener('click',ready);
+  function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+
+  function makeImage(){
+    var r=RANKS[rank],cs=getComputedStyle(app),k=rank;
+    var el=document.querySelector('#bwrap svg').cloneNode(true);
+    el.setAttribute('viewBox','-20 0 360 420');el.setAttribute('width',360);el.setAttribute('height',420);
+    el.removeAttribute('aria-label');el.removeAttribute('role');
+    var src=new XMLSerializer().serializeToString(el).replace(/var\((--[\w-]+)\)/g,function(_,v){return cs.getPropertyValue(v).trim()||'#000'});
+    var font=(document.fonts&&document.fonts.load)?document.fonts.load('900 60px "M PLUS Rounded 1c"','神バナナ貴方が剥いたでした').catch(function(){}):Promise.resolve();
+    var imgLoad=new Promise(function(res,rej){var im=new Image();im.onload=function(){res(im)};im.onerror=rej;im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(src);});
+    return Promise.all([font,imgLoad]).then(function(a){
+      var im=a[1],cv=document.createElement('canvas');cv.width=1200;cv.height=630;
+      var c=cv.getContext('2d'),F='"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Noto Sans JP",sans-serif';
+      c.fillStyle='#2b3fd6';c.fillRect(0,0,1200,630);
+      if(k==='god'){var g=c.createRadialGradient(330,315,10,330,315,420);g.addColorStop(0,'rgba(255,140,200,.95)');g.addColorStop(1,'rgba(140,70,255,0)');c.fillStyle=g;c.fillRect(0,0,1200,630);}
+      c.drawImage(im,40,40,Math.round(550*360/420),550);
+      c.textAlign='center';c.textBaseline='middle';
+      c.fillStyle='#fff';c.font='900 38px '+F;c.fillText('貴方が剥いたバナナは',830,130);
+      var fs=Math.min(120,Math.floor(540/r.n.length));
+      c.font='900 '+fs+'px '+F;
+      var w=Math.min(580,c.measureText(r.n).width+70),h=fs*1.45;
+      c.fillStyle='#ff5c8a';rr(c,830-w/2,250-h/2+8,w,h,28);c.fill();
+      c.fillStyle='#ffd93b';rr(c,830-w/2,250-h/2,w,h,28);c.fill();
+      c.fillStyle='#1b1b3a';c.fillText(r.n,830,252);
+      c.fillStyle='#fff';c.font='900 38px '+F;c.fillText('でした。（'+lastV+'%）',830,395);
+      c.font='900 28px '+F;c.fillText('#バーチャルのバナナの皮むき',830,520);
+      return new Promise(function(res){cv.toBlob(res,'image/png');});
+    });
+  }
+
   $('share').addEventListener('click',function(){
     if(!rank) return;
     var text='私が剥いたバナナは'+RANKS[rank].n+'でした！ #バーチャルのバナナの皮むき';
-    window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(text),'_blank','noopener');
+    var fallback=function(){window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(text)+'&url='+encodeURIComponent(URL_),'_blank','noopener');};
+    (imgP||Promise.resolve(null)).then(function(blob){
+      if(!blob){fallback();return;}
+      var data={files:[new File([blob],'banana.png',{type:'image/png'})],text:text+'\n'+URL_};
+      if(navigator.canShare&&navigator.canShare(data)){
+        return navigator.share(data).catch(function(e){if(!e||e.name!=='AbortError')fallback();});
+      }
+      fallback();
+    });
+  });
+
+  $('save').addEventListener('click',function(){
+    (imgP||Promise.resolve(null)).then(function(blob){
+      if(!blob) return;
+      var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='banana.png';
+      document.body.appendChild(a);a.click();a.remove();
+      setTimeout(function(){URL.revokeObjectURL(a.href)},4000);
+    });
   });
   draw(0);
 })();

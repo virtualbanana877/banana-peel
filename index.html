@@ -40,6 +40,8 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
 .btn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--deep)}
 .btn.sub{background:var(--banana);color:var(--deep)}
 .btn.x{background:#000}
+.mute{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);right:12px;z-index:10;width:44px;height:44px;border-radius:50%;border:0;background:rgba(27,27,58,.9);color:#fff;font-size:20px;cursor:pointer;touch-action:manipulation}
+.mute:focus-visible{outline:3px solid #fff;outline-offset:2px}
 .btn.mini{font-size:15px;padding:8px 24px;min-width:0;background:transparent;color:#fff;box-shadow:none;text-decoration:underline}
 .btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
 .gauge{width:100%;height:30px;border-radius:999px;background:var(--deep);padding:4px;box-shadow:0 4px 0 rgba(0,0,0,.25)}
@@ -79,12 +81,12 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
           <linearGradient id="inG" gradientUnits="userSpaceOnUse" x1="-34" y1="0" x2="34" y2="0"><stop offset="0" stop-color="#f3dc8a"/><stop offset=".5" stop-color="#fff3bf"/><stop offset="1" stop-color="#e8c960"/></linearGradient>
           <linearGradient id="fruG" x1="0" x2="1"><stop offset="0" style="stop-color:var(--f2)"/><stop offset=".4" style="stop-color:var(--f1)"/><stop offset="1" style="stop-color:var(--f2)"/></linearGradient>
           <linearGradient id="stG" x1="0" x2="1"><stop offset="0" stop-color="#8a6526"/><stop offset=".5" stop-color="#b08838"/><stop offset="1" stop-color="#5e4219"/></linearGradient>
-          <clipPath id="cL"><rect x="-80" y="-240" width="71" height="260"/></clipPath>
-          <clipPath id="cC"><rect x="-10" y="-240" width="20" height="260"/></clipPath>
-          <clipPath id="cR"><rect x="9" y="-240" width="71" height="260"/></clipPath>
+          <clipPath id="cL"><rect x="-80" y="-240" width="67" height="260"/></clipPath>
+          <clipPath id="cC"><rect x="-14" y="-240" width="28" height="260"/></clipPath>
+          <clipPath id="cR"><rect x="13" y="-240" width="67" height="260"/></clipPath>
           <g id="sil">
             <path d="M-30,0 C-36,-60 -34,-150 -10,-200 L-6,-206 L6,-206 L10,-200 C34,-150 36,-60 30,0 Z" stroke="none"/>
-            <path d="M-10,-4 C-12,-60 -12,-150 -6,-200 M10,-4 C12,-60 12,-150 6,-200" fill="none" stroke-width="2" style="stroke:var(--edge)" opacity=".35"/>
+            <path d="M-14,-4 C-16,-60 -15,-150 -7,-200 M14,-4 C16,-60 15,-150 7,-200" fill="none" stroke-width="2" style="stroke:var(--edge)" opacity=".35"/>
             <path d="M-19,-20 C-23,-80 -22,-140 -14,-180" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="5" stroke-linecap="round"/>
             <path d="M-30,0 C-36,-60 -34,-150 -10,-200 L-6,-206 L6,-206 L10,-200 C34,-150 36,-60 30,0" fill="none" stroke-width="3" stroke-linejoin="round"/>
             <rect x="-6" y="-214" width="12" height="10" rx="3" fill="#5a3d1a" stroke="none"/>
@@ -94,7 +96,7 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
           <path d="M-22,-4 C-27,-60 -25,-150 -8,-196 L8,-196 C25,-150 27,-60 22,-4Z" fill="url(#fruG)" style="stroke:var(--edge)" stroke-width="2"/>
           <path d="M-10,100 L-12,130 Q0,138 12,130 L10,100Z" fill="url(#stG)" stroke="#4a3213" stroke-width="2"/>
           <path d="M-30,-4 C-38,32 -30,82 -11,104 L11,104 C30,82 38,32 30,-4Z" fill="url(#peelG)" stroke="none"/>
-          <path d="M-10,-4 C-12,40 -9,80 -5,102 M10,-4 C12,40 9,80 5,102" fill="none" stroke-width="2" style="stroke:var(--edge)" opacity=".35"/>
+          <path d="M-14,-4 C-15,40 -11,80 -5,102 M14,-4 C15,40 11,80 5,102" fill="none" stroke-width="2" style="stroke:var(--edge)" opacity=".35"/>
           <path d="M-30,-4 C-38,32 -30,82 -11,104 L11,104 C30,82 38,32 30,-4" fill="none" style="stroke:var(--edge)" stroke-width="3"/>
           <g id="fl"><g clip-path="url(#cL)"><use id="flu" href="#sil" style="fill:url(#peelG);stroke:var(--edge)"/></g></g>
           <g id="fr"><g clip-path="url(#cR)"><use id="fru" href="#sil" style="fill:url(#peelG);stroke:var(--edge)"/></g></g>
@@ -119,6 +121,7 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
   </div>
 </main>
 
+<button class="mute" id="mute" aria-label="音のオン・オフ">🔊</button>
 <script>
 (function(){
   var $=function(i){return document.getElementById(i)};
@@ -127,12 +130,12 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
   var holding=false,t0=0,p=0,raf=0,rank=null,lastV=0,imgP=null,URL_='https://virtualbanana877.github.io/banana-peel/';
 
   var RANKS={
-    god:{n:'神バナナ',s:'完璧。バナナ界の伝説になれる。',e:['🍌','✨','🌟'],c:40},
-    pro:{n:'プロバナナ',s:'お見事。プロの手つき。',e:['🍌','✨'],c:18},
-    normal:{n:'普通バナナ',s:'悪くない。もう少しで神。',e:['🍌'],c:8},
-    unripe:{n:'未熟バナナ',s:'早すぎ。まだ皮が固い。',e:['💦','😣'],c:10},
-    mushy:{n:'ぐちゃぐちゃバナナ',s:'遅すぎ。実がつぶれた。',e:['💥','💦'],c:12},
-    rotten:{n:'腐れバナナ',s:'もはやバナナではない。',e:['🪰','☠️'],c:12}
+    god:{n:'神バナナ',v:'かみバナナ',s:'完璧。バナナ界の伝説になれる。',e:['🍌','✨','🌟'],c:40},
+    pro:{n:'プロバナナ',v:'プロバナナ',s:'お見事。プロの手つき。',e:['🍌','✨'],c:18},
+    normal:{n:'普通バナナ',v:'ふつうバナナ',s:'悪くない。もう少しで神。',e:['🍌'],c:8},
+    unripe:{n:'未熟バナナ',v:'みじゅくバナナ',s:'早すぎ。まだ皮が固い。',e:['💦','😣'],c:10},
+    mushy:{n:'ぐちゃぐちゃバナナ',v:'ぐちゃぐちゃバナナ',s:'遅すぎ。実がつぶれた。',e:['💥','💦'],c:12},
+    rotten:{n:'腐れバナナ',v:'くされバナナ',s:'もはやバナナではない。',e:['🪰','☠️'],c:12}
   };
 
   function judge(v){
@@ -146,8 +149,8 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
 
   function draw(v){
     var a=v/100*130;
-    $('fl').setAttribute('transform','rotate('+(-a)+',-20,0)');
-    $('fr').setAttribute('transform','rotate('+a+',20,0)');
+    $('fl').setAttribute('transform','rotate('+(-a)+',-22,0)');
+    $('fr').setAttribute('transform','rotate('+a+',22,0)');
     var sy=1-1.6*v/100;
     $('fc').setAttribute('transform','scale(1,'+sy.toFixed(3)+')');
     $('fcu').style.fill=sy<0?'url(#inG)':'url(#peelG)';
@@ -157,9 +160,61 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
     $('pct').innerHTML=Math.floor(v)+'<small>%</small>';
   }
 
+  var ac=null,snd=null,muted=false;
+  function audioOn(){
+    try{
+      if(!ac){var AC=window.AudioContext||window.webkitAudioContext;if(AC) ac=new AC();}
+      if(ac&&ac.state==='suspended') ac.resume();
+    }catch(e){}
+  }
+  function sndStart(){
+    if(!ac||muted||snd) return;
+    var t=ac.currentTime,o=ac.createOscillator(),f=ac.createBiquadFilter(),g=ac.createGain(),l=ac.createOscillator(),lg=ac.createGain();
+    o.type='sawtooth';o.frequency.value=160;
+    f.type='lowpass';f.Q.value=6;f.frequency.value=500;
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.14,t+.06);
+    l.frequency.value=7;lg.gain.value=10;l.connect(lg);lg.connect(o.frequency);
+    o.connect(f);f.connect(g);g.connect(ac.destination);
+    o.start();l.start();
+    snd={o:o,f:f,g:g,l:l,lg:lg};
+  }
+  function sndUpdate(v){
+    if(!snd) return;
+    var t=ac.currentTime,k=v/100;
+    snd.o.frequency.setTargetAtTime(160*Math.pow(3.4,k),t,.03);
+    snd.f.frequency.setTargetAtTime(500+1400*k,t,.03);
+    snd.lg.gain.setTargetAtTime(10+30*k,t,.05);
+    snd.l.frequency.setTargetAtTime(7+5*k,t,.05);
+  }
+  function sndStop(){
+    if(!snd) return;
+    var t=ac.currentTime,x=snd;snd=null;
+    x.g.gain.cancelScheduledValues(t);x.g.gain.setTargetAtTime(0,t,.04);
+    x.o.stop(t+.25);x.l.stop(t+.25);
+  }
+  function cancelSpeech(){try{if(window.speechSynthesis) speechSynthesis.cancel();}catch(e){}}
+  function primeSpeech(){
+    try{if(window.speechSynthesis){var u=new SpeechSynthesisUtterance('');u.volume=0;speechSynthesis.speak(u);}}catch(e){}
+  }
+  function speak(t){
+    if(muted) return;
+    try{
+      if(!window.speechSynthesis) return;
+      speechSynthesis.cancel();
+      var u=new SpeechSynthesisUtterance(t);u.lang='ja-JP';u.rate=1;u.pitch=1.1;
+      var vs=speechSynthesis.getVoices();
+      for(var i=0;i<vs.length;i++){if(/^ja/i.test(vs[i].lang)){u.voice=vs[i];break;}}
+      speechSynthesis.speak(u);
+    }catch(e){}
+  }
+  $('mute').addEventListener('click',function(){
+    muted=!muted;this.textContent=muted?'🔇':'🔊';
+    if(muted){sndStop();cancelSpeech();}else{audioOn();}
+  });
+
   function setScreen(s){app.dataset.s=s;}
   function ready(){
-    cancelAnimationFrame(raf);holding=false;p=0;rank=null;app.dataset.r='';
+    sndStop();cancelSpeech();cancelAnimationFrame(raf);holding=false;p=0;rank=null;app.dataset.r='';audioOn();primeSpeech();
     draw(0);$('hint').textContent='画面を長押し！';setScreen('play');
   }
 
@@ -167,6 +222,7 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
     if(!holding) return;
     p=Math.min(100,(now-t0)/1000*SPEED);
     draw(p);
+    sndUpdate(p);
     if(p>=100){finish();return;}
     raf=requestAnimationFrame(tick);
   }
@@ -174,7 +230,7 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
   function press(e){
     if(app.dataset.s!=='play'||holding) return;
     e.preventDefault();
-    holding=true;t0=performance.now();
+    holding=true;t0=performance.now();audioOn();sndStart();
     $('hint').textContent='ちょうどいいところで離す！';
     raf=requestAnimationFrame(tick);
   }
@@ -185,6 +241,7 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
 
   function finish(){
     holding=false;cancelAnimationFrame(raf);
+    sndStop();
     var v=Math.floor(p);
     rank=judge(v);var r=RANKS[rank];
     draw(p);
@@ -192,10 +249,11 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
     var mx=Math.max.apply(null,parts.map(function(t){return t.length}));
     var fs=Math.min(64,Math.floor((Math.min(window.innerWidth,520)-112)/(mx*1.06)));
     $('rtext').innerHTML='貴方が剥いたバナナは<br><span id="rank" class="disp" style="font-size:'+fs+'px">'+parts.join('<br>')+'</span><br>でした。';
-    $('rsub').textContent=r.s+'（'+v+'%）';
+    $('rsub').textContent=r.s;
     app.dataset.r=rank;setScreen('result');
     effects(rank);
     lastV=v;imgP=makeImage().catch(function(){return null});
+    speak('あなたがむいたバナナは、'+r.v+'でした。');
   }
 
   function effects(k){
@@ -250,7 +308,7 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
       c.fillStyle='#ff5c8a';rr(c,830-w/2,250-h/2+8,w,h,28);c.fill();
       c.fillStyle='#ffd93b';rr(c,830-w/2,250-h/2,w,h,28);c.fill();
       c.fillStyle='#1b1b3a';c.fillText(r.n,830,252);
-      c.fillStyle='#fff';c.font='900 38px '+F;c.fillText('でした。（'+lastV+'%）',830,395);
+      c.fillStyle='#fff';c.font='900 38px '+F;c.fillText('でした。',830,395);
       c.font='900 28px '+F;c.fillText('#バーチャルのバナナの皮むき',830,520);
       return new Promise(function(res){cv.toBlob(res,'image/png');});
     });

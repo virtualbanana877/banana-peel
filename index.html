@@ -283,7 +283,7 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
     imgP = makeImage().catch(function(){return null});
 
     if(rank === 'phantom'){
-      speak('貴方が剥いたバナナは、みつかりませんでした。');
+      speak('貴方が剥いたバナナは、みつかりませんでした。'+r.diag);
     } else {
       speak('あなたがむいたバナナは、'+r.v+'でした。'+r.diag);
     }

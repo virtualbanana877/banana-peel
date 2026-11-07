@@ -31,9 +31,10 @@ h1{margin:0;font-size:clamp(34px,11vw,52px);line-height:1.15;color:var(--banana)
 .hint{margin:0;font-size:21px;line-height:1.4}
 .on-title,.hint,#rtext,#rsub{background:rgba(27,27,58,.92);border-radius:22px;padding:16px 18px;box-shadow:0 5px 0 rgba(0,0,0,.3)}
 .stage{display:flex;align-items:center;justify-content:center;min-height:0}
-#bwrap{height:100%;max-height:430px;aspect-ratio:320/420;filter:drop-shadow(0 10px 0 rgba(27,27,58,.28))}
+#bwrap{height:100%;max-height:430px;aspect-ratio:320/420;filter:drop-shadow(0 10px 0 rgba(27,27,58,.28));transition:transform .6s cubic-bezier(.2,.8,.3,1),opacity .5s}
 #app[data-s="title"] #bwrap{animation:wob 2.4s ease-in-out infinite}
 @keyframes wob{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+#bwrap.svg-fly{transform:translate(120vw,-80vh) rotate(720deg) scale(.3);opacity:0}
 #bwrap svg{width:100%;height:100%;overflow:visible}
 .btn{appearance:none;border:0;border-radius:999px;background:var(--pink);color:#fff;font:inherit;font-size:22px;padding:16px 40px;min-width:240px;
 box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
@@ -60,7 +61,8 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
 #app[data-r="unripe"]{--p1:#7fb72a;--p2:#b9e05a;--p3:#5f9a1a;--edge:#4f7d12;--f1:#f6f8d2;--f2:#dfe8a0}
 #app[data-r="mushy"]{--f1:#f0cf8e;--f2:#d2a456}
 #app[data-r="rotten"]{--p1:#6f7a3a;--p2:#8d9650;--p3:#4a5224;--edge:#343a18;--f1:#8a7440;--f2:#5e4b25}
-@media (prefers-reduced-motion:reduce){#app[data-s="title"] #bwrap,#rank,.shake{animation:none}}
+#app[data-r="phantom"]{--p1:#c0c0c0;--p2:#e8e8e8;--p3:#a0a0a0;--edge:#808080;--f1:#f0f0f0;--f2:#d0d0d0}
+@media (prefers-reduced-motion:reduce){#app[data-s="title"] #bwrap,#rank,.shake,#bwrap.svg-fly{animation:none;transition:none}}
 </style>
 </head>
 <body>
@@ -126,41 +128,45 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
 <script>
 (function(){
   var $=function(i){return document.getElementById(i)};
-  var app=$('app'),SPEED=100/3.2; // 3.2秒で100%
+  var app=$('app'),SPEED=100/3.2;
   var calm=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
   var holding=false,t0=0,p=0,raf=0,rank=null,lastV=0,imgP=null,URL_='https://virtualbanana877.github.io/banana-peel/';
+  var tapCount=0,tapTimer=0,bananaGone=false;
 
   var RANKS={
-    'super':{n:'スーパーゴッドバナナ',v:'スーパーゴッドバナナ',s:'伝説。ほぼ誰も届かない領域。',e:['🍌','✨','🌟','👑'],c:70},
-    god:{n:'神バナナ',v:'かみバナナ',s:'完璧。バナナ界の伝説になれる。',e:['🍌','✨','🌟'],c:40},
-    pro:{n:'プロバナナ',v:'プロバナナ',s:'お見事。プロの手つき。',e:['🍌','✨'],c:18},
-    normal:{n:'普通バナナ',v:'ふつうバナナ',s:'悪くない。もう少しで神。',e:['🍌'],c:8},
-    unripe:{n:'未熟バナナ',v:'みじゅくバナナ',s:'早すぎ。まだ皮が固い。',e:['💦','😣'],c:10},
-    mushy:{n:'ぐちゃぐちゃバナナ',v:'ぐちゃぐちゃバナナ',s:'遅すぎ。実がつぶれた。',e:['💥','💦'],c:12},
-    rotten:{n:'腐れバナナ',v:'くされバナナ',s:'もはやバナナではない。',e:['🪰','☠️'],c:12}
+    'super':{n:'スーパーゴッドバナナ',v:'スーパーゴッドバナナ',s:'伝説。ほぼ誰も届かない領域。',diag:'あなたは完璧主義者です',e:['🍌','✨','🌟','👑'],c:70},
+    god:{n:'神バナナ',v:'かみバナナ',s:'完璧。バナナ界の伝説になれる。',diag:'あなたは完璧主義者です',e:['🍌','✨','🌟'],c:40},
+    pro:{n:'プロバナナ',v:'プロバナナ',s:'お見事。プロの手つき。',diag:'あなたはなかなかの実力者です',e:['🍌','✨'],c:18},
+    normal:{n:'普通バナナ',v:'ふつうバナナ',s:'悪くない。もう少しで神。',diag:'あなたは平凡を愛する人です',e:['🍌'],c:8},
+    unripe:{n:'未熟バナナ',v:'みじゅくバナナ',s:'早すぎ。まだ皮が固い。',diag:'あなたは優柔不断です',e:['💦','😣'],c:10},
+    mushy:{n:'ぐちゃぐちゃバナナ',v:'ぐちゃぐちゃバナナ',s:'遅すぎ。実がつぶれた。',diag:'あなたは思い切りが良すぎます',e:['💥','💦'],c:12},
+    rotten:{n:'腐れバナナ',v:'くされバナナ',s:'もはやバナナではない。',diag:'あなたは思い切りが良すぎます',e:['🪰','☠️'],c:12},
+    phantom:{n:'幻のバナナ',v:'まぼろしバナナ',s:'貴方が剥いたバナナはみつかりませんでした。',diag:'あなたはバナナに向いていません',e:['👻','💨','✨'],c:8}
   };
 
-  function judge(v){
-    if(v<15||v>=100) return 'rotten';
-    if(v===87) return 'super';
-    if(v>=85&&v<=89) return 'god';
-    if((v>=77&&v<=84)||(v>=90&&v<=92)) return 'pro';
-    if((v>=62&&v<=76)||(v>=93&&v<=95)) return 'normal';
-    if(v<62) return 'unripe';
+  function judge(v, holdTime){
+    // 即離し判定（ほぼ0% or 0.12秒以内）
+    if(v < 1 || holdTime < 0.12) return 'phantom';
+    if(v < 15 || v >= 100) return 'rotten';
+    if(v === 87) return 'super';
+    if(v >= 85 && v <= 89) return 'god';
+    if((v >= 77 && v <= 84) || (v >= 90 && v <= 92)) return 'pro';
+    if((v >= 62 && v <= 76) || (v >= 93 && v <= 95)) return 'normal';
+    if(v < 62) return 'unripe';
     return 'mushy';
   }
 
   function draw(v){
-    var a=v/100*130;
+    var a = v / 100 * 130;
     $('fl').setAttribute('transform','rotate('+(-a)+',-22,0)');
     $('fr').setAttribute('transform','rotate('+a+',22,0)');
-    var sy=1-1.6*v/100;
+    var sy = 1 - 1.6 * v / 100;
     $('fc').setAttribute('transform','scale(1,'+sy.toFixed(3)+')');
-    $('fcu').style.fill=sy<0?'url(#inG)':'url(#peelG)';
-    $('flu').style.fill=a>90?'url(#inG)':'url(#peelG)';
-    $('fru').style.fill=a>90?'url(#inG)':'url(#peelG)';
-    $('fill').style.width=v+'%';
-    $('pct').innerHTML=Math.floor(v)+'<small>%</small>';
+    $('fcu').style.fill = sy < 0 ? 'url(#inG)' : 'url(#peelG)';
+    $('flu').style.fill = a > 90 ? 'url(#inG)' : 'url(#peelG)';
+    $('fru').style.fill = a > 90 ? 'url(#inG)' : 'url(#peelG)';
+    $('fill').style.width = v + '%';
+    $('pct').innerHTML = Math.floor(v) + '<small>%</small>';
   }
 
   var ac=null,snd=null,muted=false;
@@ -217,7 +223,13 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
 
   function setScreen(s){app.dataset.s=s;}
   function ready(){
-    sndStop();cancelSpeech();cancelAnimationFrame(raf);holding=false;p=0;rank=null;app.dataset.r='';audioOn();primeSpeech();
+    sndStop();cancelSpeech();cancelAnimationFrame(raf);holding=false;p=0;rank=null;app.dataset.r='';
+    bananaGone=false;tapCount=0;
+    var bw=$('bwrap');
+    bw.classList.remove('svg-fly');
+    bw.style.transform='';
+    bw.style.opacity='';
+    audioOn();primeSpeech();
     draw(0);$('hint').textContent='画面を長押し！';setScreen('play');
   }
 
@@ -245,25 +257,43 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
   function finish(){
     holding=false;cancelAnimationFrame(raf);
     sndStop();
-    var v=Math.floor(p);
-    rank=judge(v);var r=RANKS[rank];
+    var holdTime = (performance.now() - t0) / 1000;
+    var v = Math.floor(p);
+    rank = judge(v, holdTime);
+    var r = RANKS[rank];
     draw(p);
-    var parts=r.n.length>6?[r.n.slice(0,-3),'バナナ']:[r.n];
-    var mx=Math.max.apply(null,parts.map(function(t){return t.length}));
-    var fs=Math.min(64,Math.floor((Math.min(window.innerWidth,520)-112)/(mx*1.06)));
-    $('rtext').innerHTML='貴方が剥いたバナナは<br><span id="rank" class="disp" style="font-size:'+fs+'px">'+parts.join('<br>')+'</span><br>でした。';
-    $('rsub').textContent=r.s;
-    app.dataset.r=rank;setScreen('result');
+
+    // 結果テキスト
+    if(rank === 'phantom'){
+      $('rtext').innerHTML = '貴方が剥いたバナナは<br><span id="rank" class="disp" style="font-size:42px">みつかりませんでした</span>';
+    } else {
+      var parts = r.n.length > 6 ? [r.n.slice(0,-3),'バナナ'] : [r.n];
+      var mx = Math.max.apply(null, parts.map(function(t){return t.length}));
+      var fs = Math.min(64, Math.floor((Math.min(window.innerWidth,520)-112)/(mx*1.06)));
+      $('rtext').innerHTML = '貴方が剥いたバナナは<br><span id="rank" class="disp" style="font-size:'+fs+'px">'+parts.join('<br>')+'</span><br>でした。';
+    }
+
+    // 性格診断を追加
+    $('rsub').innerHTML = r.s + '<br><strong style="color:var(--banana)">' + r.diag + '</strong>';
+
+    app.dataset.r = rank;
+    setScreen('result');
     effects(rank);
-    lastV=v;imgP=makeImage().catch(function(){return null});
-    speak('あなたがむいたバナナは、'+r.v+'でした。');
+    lastV = v;
+    imgP = makeImage().catch(function(){return null});
+
+    if(rank === 'phantom'){
+      speak('貴方が剥いたバナナは、みつかりませんでした。');
+    } else {
+      speak('あなたがむいたバナナは、'+r.v+'でした。'+r.diag);
+    }
   }
 
   function effects(k){
-    var r=RANKS[k];
+    var r = RANKS[k];
     try{if(navigator.vibrate) navigator.vibrate((k==='god'||k==='super')?[40,40,80]:(k==='pro'||k==='normal')?30:[90,50,90]);}catch(e){}
     if(calm) return;
-    if(k==='unripe'||k==='mushy'||k==='rotten'){
+    if(k==='unripe'||k==='mushy'||k==='rotten'||k==='phantom'){
       var w=$('bwrap');w.classList.remove('shake');void w.offsetWidth;w.classList.add('shake');
     }
     var box=$('stage').getBoundingClientRect(),cx=box.left+box.width/2,cy=box.top+box.height*0.4;
@@ -280,6 +310,28 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
     }
   }
 
+  // 結果画面でバナナ連打 → 怒って飛ぶ
+  $('bwrap').addEventListener('pointerdown', function(e){
+    if(app.dataset.s !== 'result' || bananaGone) return;
+    e.stopPropagation();
+    tapCount++;
+    clearTimeout(tapTimer);
+    tapTimer = setTimeout(function(){ tapCount = 0; }, 800);
+
+    // 少し震える演出
+    var bw = $('bwrap');
+    bw.classList.remove('shake');
+    void bw.offsetWidth;
+    bw.classList.add('shake');
+
+    if(tapCount >= 8){
+      bananaGone = true;
+      bw.classList.add('svg-fly');
+      $('rsub').innerHTML = 'バナナが怒って行ってしまいました…';
+      try{ if(navigator.vibrate) navigator.vibrate([50,30,50,30,80]); }catch(err){}
+    }
+  });
+
   app.addEventListener('pointerdown',press);
   window.addEventListener('pointerup',release);
   window.addEventListener('pointercancel',release);
@@ -287,6 +339,7 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
 
   $('start').addEventListener('click',ready);
   $('again').addEventListener('click',ready);
+
   function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
 
   function makeImage(){
@@ -304,23 +357,33 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
       if(k==='god'||k==='super'){var g=c.createRadialGradient(330,315,10,330,315,420);g.addColorStop(0,'rgba(255,140,200,.95)');g.addColorStop(1,'rgba(140,70,255,0)');c.fillStyle=g;c.fillRect(0,0,1200,630);}
       c.drawImage(im,40,40,Math.round(550*360/420),550);
       c.textAlign='center';c.textBaseline='middle';
-      c.fillStyle='#fff';c.font='900 38px '+F;c.fillText('貴方が剥いたバナナは',830,130);
-      var fs=Math.min(120,Math.floor(540/r.n.length));
-      c.font='900 '+fs+'px '+F;
-      var w=Math.min(580,c.measureText(r.n).width+70),h=fs*1.45;
-      c.fillStyle='#ff5c8a';rr(c,830-w/2,250-h/2+8,w,h,28);c.fill();
-      var pg='#ffd93b';if(k==='super'){pg=c.createLinearGradient(830-w/2,0,830+w/2,0);pg.addColorStop(0,'#ffd93b');pg.addColorStop(.35,'#ff9ad0');pg.addColorStop(.7,'#8cf0ff');pg.addColorStop(1,'#ffd93b');}
-      c.fillStyle=pg;rr(c,830-w/2,250-h/2,w,h,28);c.fill();
-      c.fillStyle='#1b1b3a';c.fillText(r.n,830,252);
-      c.fillStyle='#fff';c.font='900 38px '+F;c.fillText('でした。',830,395);
-      c.font='900 28px '+F;c.fillText('#バーチャルのバナナの皮むき',830,520);
+      c.fillStyle='#fff';c.font='900 38px '+F;
+      if(k==='phantom'){
+        c.fillText('貴方が剥いたバナナは',830,180);
+        c.font='900 48px '+F;
+        c.fillStyle='#ffd93b';
+        c.fillText('みつかりませんでした',830,280);
+      } else {
+        c.fillText('貴方が剥いたバナナは',830,130);
+        var fs=Math.min(120,Math.floor(540/r.n.length));
+        c.font='900 '+fs+'px '+F;
+        var w=Math.min(580,c.measureText(r.n).width+70),h=fs*1.45;
+        c.fillStyle='#ff5c8a';rr(c,830-w/2,250-h/2+8,w,h,28);c.fill();
+        var pg='#ffd93b';if(k==='super'){pg=c.createLinearGradient(830-w/2,0,830+w/2,0);pg.addColorStop(0,'#ffd93b');pg.addColorStop(.35,'#ff9ad0');pg.addColorStop(.7,'#8cf0ff');pg.addColorStop(1,'#ffd93b');}
+        c.fillStyle=pg;rr(c,830-w/2,250-h/2,w,h,28);c.fill();
+        c.fillStyle='#1b1b3a';c.fillText(r.n,830,252);
+        c.fillStyle='#fff';c.font='900 38px '+F;c.fillText('でした。',830,395);
+      }
+      c.font='900 28px '+F;c.fillStyle='#fff';c.fillText('#バーチャルのバナナの皮むき',830,520);
       return new Promise(function(res){cv.toBlob(res,'image/png');});
     });
   }
 
   $('share').addEventListener('click',function(){
     if(!rank) return;
-    var text='私が剥いたバナナは'+RANKS[rank].n+'でした！ #バーチャルのバナナの皮むき';
+    var text = rank === 'phantom'
+      ? '私が剥いたバナナはみつかりませんでした… #バーチャルのバナナの皮むき'
+      : '私が剥いたバナナは'+RANKS[rank].n+'でした！ #バーチャルのバナナの皮むき';
     var fallback=function(){window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(text)+'&url='+encodeURIComponent(URL_),'_blank','noopener');};
     (imgP||Promise.resolve(null)).then(function(blob){
       if(!blob){fallback();return;}

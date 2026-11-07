@@ -141,7 +141,7 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
     unripe:{n:'未熟バナナ',v:'みじゅくバナナ',s:'早すぎ。まだ皮が固い。',diag:'あなたは優柔不断です',e:['💦','😣'],c:10},
     mushy:{n:'ぐちゃぐちゃバナナ',v:'ぐちゃぐちゃバナナ',s:'遅すぎ。実がつぶれた。',diag:'あなたは思い切りが良すぎます',e:['💥','💦'],c:12},
     rotten:{n:'腐れバナナ',v:'くされバナナ',s:'もはやバナナではない。',diag:'あなたは思い切りが良すぎます',e:['🪰','☠️'],c:12},
-    phantom:{n:'幻のバナナ',v:'まぼろしバナナ',s:'貴方が剥いたバナナはみつかりませんでした。',diag:'あなたはバナナに向いていません',e:['👻','💨','✨'],c:8}
+    phantom:{n:'幻のバナナ',v:'まぼろしバナナ',s:'ちょん、と触れただけだった。',diag:'あなたはバナナに向いていません',e:['👻','💨','✨'],c:8}
   };
 
   function judge(v, holdTime){
@@ -205,15 +205,25 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
   function primeSpeech(){
     try{if(window.speechSynthesis){var u=new SpeechSynthesisUtterance('');u.volume=0;speechSynthesis.speak(u);}}catch(e){}
   }
-  function speak(t){
+  function pickVoice(){
+    var vs=speechSynthesis.getVoices().filter(function(v){return /^ja/i.test(v.lang)});
+    var pref=/kyoko|nanami|haruka|ayumi|sayaka|o-ren|google/i;
+    for(var i=0;i<vs.length;i++){if(pref.test(vs[i].name)) return vs[i];}
+    return vs[0]||null;
+  }
+  function speak(list){
     if(muted) return;
     try{
       if(!window.speechSynthesis) return;
       speechSynthesis.cancel();
-      var u=new SpeechSynthesisUtterance(t);u.lang='ja-JP';u.rate=1;u.pitch=1.1;
-      var vs=speechSynthesis.getVoices();
-      for(var i=0;i<vs.length;i++){if(/^ja/i.test(vs[i].lang)){u.voice=vs[i];break;}}
-      speechSynthesis.speak(u);
+      var v=pickVoice();
+      [].concat(list).forEach(function(it){
+        var o=typeof it==='string'?{t:it}:it;
+        var u=new SpeechSynthesisUtterance(o.t);u.lang='ja-JP';
+        u.pitch=o.s?2:1.8;u.rate=o.s?0.95:1.12;
+        if(v) u.voice=v;
+        speechSynthesis.speak(u);
+      });
     }catch(e){}
   }
   $('mute').addEventListener('click',function(){
@@ -265,7 +275,8 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
 
     // 結果テキスト
     if(rank === 'phantom'){
-      $('rtext').innerHTML = '貴方が剥いたバナナは<br><span id="rank" class="disp" style="font-size:42px">みつかりませんでした</span>';
+      var pfs = Math.min(56, Math.floor((Math.min(window.innerWidth,520)-112)/(6*1.06)));
+      $('rtext').innerHTML = '貴方が剥いたバナナは<br><span id="rank" class="disp" style="font-size:'+pfs+'px">みつかり<br>ませんでした</span>';
     } else {
       var parts = r.n.length > 6 ? [r.n.slice(0,-3),'バナナ'] : [r.n];
       var mx = Math.max.apply(null, parts.map(function(t){return t.length}));
@@ -283,9 +294,9 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
     imgP = makeImage().catch(function(){return null});
 
     if(rank === 'phantom'){
-      speak('貴方が剥いたバナナは、みつかりませんでした。'+r.diag);
+      speak(['あなたがむいたバナナは',{t:'みつかりませんでした',s:1},r.diag]);
     } else {
-      speak('あなたがむいたバナナは、'+r.v+'でした。'+r.diag);
+      speak(['あなたがむいたバナナは',{t:r.v,s:1},'でした',r.diag]);
     }
   }
 
@@ -318,13 +329,15 @@ box-shadow:0 6px 0 var(--deep);cursor:pointer;touch-action:manipulation}
     clearTimeout(tapTimer);
     tapTimer = setTimeout(function(){ tapCount = 0; }, 800);
 
-    // 少し震える演出
     var bw = $('bwrap');
-    bw.classList.remove('shake');
-    void bw.offsetWidth;
-    bw.classList.add('shake');
+    if(tapCount < 8){
+      bw.classList.remove('shake');
+      void bw.offsetWidth;
+      bw.classList.add('shake');
+    }
 
     if(tapCount >= 8){
+      bw.classList.remove('shake');
       bananaGone = true;
       bw.classList.add('svg-fly');
       $('rsub').innerHTML = 'バナナが怒って行ってしまいました…';
